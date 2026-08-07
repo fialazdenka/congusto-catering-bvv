@@ -1,0 +1,11 @@
+# Zdrojové brandové materiály — NEpublikovat (licencovaný font Acumin Pro,
+# kompletní brand manuál, EPS/AI). Web je nepotřebuje.
+podklady/
+
+# OS / editor / nástroje
+.DS_Store
+.claude/
+_dl/
+_shots/
+_qa/
+*.log
