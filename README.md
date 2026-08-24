@@ -8,6 +8,8 @@ Nasazení = nahrát soubory na libovolný webserver.
 
 ```
 index.html         # celá stránka
+vercel.json        # hosting: bezpečnostní hlavičky, cache, noindex
+robots.txt         # zatím Disallow (před spuštěním)
 css/style.css      # styly (barvy jsou CSS proměnné na začátku souboru)
 js/main.js         # navigace, animace, validace + odeslání formuláře
 assets/img/        # fotografie
@@ -15,6 +17,7 @@ assets/logo/       # loga + favicon (SVG)
 assets/fonts/      # firemní display font ConGusto
 podklady/          # zdrojové brandové materiály (NEnahrávat na web)
 CLAUDE.md          # podrobná projektová/technická dokumentace
+DEPLOY.md          # hosting, DNS, bezpečnost, checklist pro spuštění
 ```
 
 ## Jak spustit lokálně
@@ -28,8 +31,14 @@ Pak otevřít **http://localhost:8000/**
 
 ## Nasazení do produkce
 
-Nahrajte na server obsah kořenové složky **kromě `podklady/`** (zdrojové materiály)
-a kromě `CLAUDE.md` / `README.md` (nepovinné). Tedy: `index.html`, `css/`, `js/`, `assets/`.
+Hostováno na **Vercelu**, projekt `congusto-catering-bvv`, cílová doména
+**`bvv.congustocatering.cz`**. Push do `main` = automatický produkční deploy,
+z terminálu `npx vercel --prod`.
+
+Stránka je zatím **soukromá a neindexovaná** (Vercel Authentication + `noindex`).
+
+> Kompletní provozní návod — deploy, DNS pro IT, bezpečnostní hlavičky
+> a checklist pro spuštění naostro — je v **`DEPLOY.md`**.
 
 ## Co je potřeba upravit
 
@@ -57,19 +66,23 @@ je-li vyplněné, poptávku zahoďte.
 > (rate limiting / CAPTCHA) a **CSRF** ochranu. Frontendová validace je jen UX.
 
 ### Produkční URL
-V `<head>` souboru `index.html` nahraďte `PLACEHOLDER-DOMENA.cz` skutečnou doménou
-(3× — `canonical`, `og:url`, `og:image`).
+Nastavena na `https://bvv.congustocatering.cz/` (`canonical`, `og:url`, `og:image`
+v `<head>`). Při změně domény upravit všechny tři.
 
 ### Odkaz na zpracování osobních údajů
 Na 2 místech je `href="#"` (souhlas u formuláře + patička) — doplňte reálný odkaz.
 
 ## Před spuštěním zkontrolujte
-1. Formulář je napojený na reálný endpoint (+ server-side validace/anti-spam/CSRF).
-2. Doplněný odkaz na zpracování osobních údajů.
-3. Nastavená produkční URL (canonical + Open Graph).
-4. HTTP security hlavičky na webserveru (návrh CSP a dalších v `CLAUDE.md` → sekce Security).
+1. DNS záznam pro `bvv.congustocatering.cz` je nastavený (viz `DEPLOY.md`).
+2. Formulář je napojený na reálný endpoint (+ server-side validace/anti-spam/CSRF).
+3. Doplněný odkaz na zpracování osobních údajů.
+4. Povolená indexace — `noindex` je na **třech** místech (`vercel.json`, `index.html`,
+   `robots.txt`), viz `DEPLOY.md` → „Spuštění naostro“.
 5. Analytika/consent: stránka záměrně neobsahuje trackery — vložte je až po vyřešení
    consent managementu (viz `CLAUDE.md` → Privacy).
+
+> Bezpečnostní hlavičky včetně CSP jsou nastavené ve `vercel.json`. CSP je přísná:
+> **žádné inline `style="…"` ani inline `<script>`** — prohlížeč by je zablokoval.
 
 ## Barvy značky
 Definované jako CSS proměnné v horní části `css/style.css`:

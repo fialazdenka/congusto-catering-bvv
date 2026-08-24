@@ -1,0 +1,15 @@
+# Zdrojové brandové materiály — na web nepatří (licencovaný font, brand manuál)
+podklady/
+
+# Interní dokumentace — není potřeba na produkci
+CLAUDE.md
+README.md
+DEPLOY.md
+
+# Nástroje / OS
+.claude/
+.DS_Store
+_dl/
+_shots/
+_qa/
+*.log

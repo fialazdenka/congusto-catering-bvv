@@ -9,3 +9,8 @@ _dl/
 _shots/
 _qa/
 *.log
+
+# Vercel
+.vercel/
+.vercel
+.env*

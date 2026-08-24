@@ -112,6 +112,8 @@ ul { margin: 0; padding: 0; }
   color: var(--cream);
 }
 .section--dark h2, .section--dark h3 { color: #fff; }
+/* Světlejší purpurová varianta tmavé sekce (poptávka) */
+.section--dark.section--purpur { background: var(--purpur); }
 .section--paper2 { background: var(--paper-2); }
 
 .eyebrow {
@@ -127,6 +129,7 @@ ul { margin: 0; padding: 0; }
 
 .section-head { max-width: 46rem; margin-bottom: clamp(2rem, 4vw, 3rem); }
 .section-head.center { margin-inline: auto; text-align: center; }
+.section-head--tight { margin-bottom: 2rem; }
 
 h2.section-title { font-size: clamp(1.7rem, 1.3rem + 2vw, 2.9rem); }
 .lead { font-size: clamp(1.05rem, 1rem + .5vw, 1.3rem); color: var(--text-soft); }
@@ -316,6 +319,14 @@ h2.section-title { font-size: clamp(1.7rem, 1.3rem + 2vw, 2.9rem); }
   padding: .35rem .7rem; border-radius: 100px;
 }
 
+/* CTA varianta karty — purpurová, obsah centrovaný */
+.card--cta { justify-content: center; background: var(--purpur); border-color: var(--purpur); }
+.card--cta .card__body { text-align: center; align-items: center; gap: .75rem; }
+.card--cta .card__kicker { color: var(--gold); }
+.card--cta h3 { color: #fff; }
+.card--cta p { color: rgba(255, 255, 255, .82); }
+.card--cta .btn { margin-top: .5rem; }
+
 /* ---------- 10. Jak to funguje ------------------------------------ */
 .how { display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
 @media (max-width: 860px) { .how { grid-template-columns: 1fr; } }
@@ -382,6 +393,10 @@ h2.section-title { font-size: clamp(1.7rem, 1.3rem + 2vw, 2.9rem); }
 .contact__points a { color: #fff; text-decoration: none; font-weight: 600; }
 .contact__points a:hover { color: var(--gold); }
 .contact__points .muted { color: var(--cream-soft); font-size: .95rem; font-weight: 400; }
+.contact__points strong { color: #fff; font-weight: 600; }
+
+/* Honeypot proti botům — skryté pole, které lidé nevidí a nevyplní */
+.honeypot { position: absolute; left: -9999px; height: 0; overflow: hidden; }
 
 .form-card {
   background: #fff; color: var(--text);

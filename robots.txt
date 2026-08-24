@@ -1,0 +1,14 @@
+# Con Gusto Catering — landing page „Catering na BVV“
+#
+# ⚠ DOČASNÝ STAV: stránka je před spuštěním a nesmí se indexovat.
+# Při spuštění naostro nahraďte blok níže variantou „PO SPUŠTĚNÍ“.
+# Viz DEPLOY.md → „Spuštění naostro“.
+
+User-agent: *
+Disallow: /
+
+# --- PO SPUŠTĚNÍ (odkomentovat, blok výše smazat) ---
+# User-agent: *
+# Allow: /
+#
+# Sitemap: https://bvv.congustocatering.cz/sitemap.xml

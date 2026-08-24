@@ -44,6 +44,9 @@ Vychází z brand manuálu ve složce `podklady/` a z živého webu
 ```
 /
 ├─ index.html                 # celá stránka (semantic HTML, jedna URL)
+├─ vercel.json                # hosting: bezpečnostní hlavičky, cache, X-Robots-Tag
+├─ robots.txt                 # zatím Disallow (stránka před spuštěním)
+├─ .vercelignore              # co se NEnahrává na produkci
 ├─ css/style.css              # veškeré styly, CSS custom properties, breakpointy
 ├─ js/main.js                 # vanilla JS: nav, sticky header, reveal, validace formuláře
 ├─ assets/
@@ -52,11 +55,27 @@ Vychází z brand manuálu ve složce `podklady/` a z živého webu
 │  └─ fonts/                  # ConGusto display font (woff2/woff)
 ├─ podklady/                  # ZDROJOVÉ brandové materiály (NEDISTRIBUOVAT na web, needitovat)
 ├─ CLAUDE.md
+├─ DEPLOY.md                  # hosting, DNS, bezpečnost, launch checklist
 └─ README.md
 ```
 
 Bez build procesu, bez frameworků, bez závislostí. Čisté HTML5 + CSS3 + vanilla JS.
-Funguje po nahrání statických souborů na libovolný webserver.
+
+## Hosting
+
+**Vercel**, projekt `congusto-catering-bvv` (scope `zdenkafiala's projects`, plán Pro),
+propojený s GitHub repem `fialazdenka/congusto-catering-bvv` — push do `main` je
+automatický produkční deploy, z terminálu `npx vercel --prod`.
+
+Cílová doména: **`bvv.congustocatering.cz`** (přiřazená k projektu, čeká na DNS
+záznam u regzone.cz). Dočasná adresa: `congusto-catering-bvv.vercel.app`.
+
+Stránka je před spuštěním **soukromá** (Vercel Authentication na `*.vercel.app`)
+a **neindexovaná** na třech místech současně: `X-Robots-Tag` ve `vercel.json`,
+`<meta name="robots">` v `index.html` a `Disallow: /` v `robots.txt`.
+
+> Kompletní provozní návod (deploy, DNS pro IT, požadavky na formulářový endpoint,
+> launch checklist) je v **`DEPLOY.md`** — při práci s hostingem začínejte tam.
 
 ## Assets
 
@@ -138,12 +157,16 @@ pouze simulováno na frontendu (viz `js/main.js`). Vše je připraveno k napojen
 
 ## Production checklist
 
-1. Napojit formulář na reálný endpoint + server-side validace/sanitizace/anti-spam/CSRF (viz výše).
-2. Doplnit reálný odkaz na „Zpracování osobních údajů“ (2× `href="#"`).
-3. Nastavit produkční URL: `<link rel="canonical">` + `og:url` + `og:image`
-   (nyní `PLACEHOLDER-DOMENA.cz`).
-4. Nastavit HTTP security hlavičky na webserveru (viz Security).
+Podrobně a s příkazy v `DEPLOY.md` → „Spuštění naostro“. Ve zkratce:
+
+1. DNS: IT přidá `CNAME bvv → cname.vercel-dns.com.` u regzone.cz.
+2. Napojit formulář na reálný endpoint + server-side validace/sanitizace/anti-spam/CSRF (viz výše).
+3. Doplnit reálný odkaz na „Zpracování osobních údajů“ (2× `href="#"`).
+4. Povolit indexaci — `noindex` je na **třech** místech (`vercel.json`, `index.html`, `robots.txt`).
 5. Vyřešit analytiku a consent (viz Privacy) — teprv poté vkládat tracking.
+
+Hotovo: produkční URL (`canonical` / `og:url` / `og:image` = `bvv.congustocatering.cz`),
+bezpečnostní hlavičky ve `vercel.json`.
 
 ## Security
 
@@ -154,19 +177,19 @@ Implementováno na frontendu:
   (stavové hlášky jsou statické texty přes `textContent`).
 - Honeypot pole proti botům.
 
-Doporučení pro produkční webserver (nastavit dle použitého serveru — nekonfigurováno,
-protože server IT neznáme). Navržená CSP odpovídá tomu, že stránka nemá žádné externí
-zdroje:
-```
-Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self';
-    script-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none';
-    base-uri 'self'
-Referrer-Policy: strict-origin-when-cross-origin
-X-Content-Type-Options: nosniff
-Permissions-Policy: geolocation=(), camera=(), microphone=(), interest-cohort=()
-Strict-Transport-Security: max-age=31536000; includeSubDomains   # jen přes HTTPS
-```
-Pozn.: pokud se přidá GTM/analytics, bude potřeba CSP odpovídajícím způsobem rozšířit.
+HTTP hlavičky jsou **nastavené a ověřené na produkci** ve `vercel.json`
+(plné znění viz `DEPLOY.md` → „Bezpečnostní hlavičky“):
+CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`,
+`Permissions-Policy`, `Cross-Origin-Opener-Policy`.
+
+**CSP je přísná (`style-src 'self'`, `script-src 'self'`) — v `index.html` proto
+nesmí být inline `style="…"`, `<style>` ani `<script>`.** Prohlížeč by je zablokoval.
+Všechny styly patří do `css/style.css` jako třídy. Pokud se přidá cokoli externího
+(GTM/analytics, cizí font, API na jiné doméně), je nutné CSP rozšířit —
+u API jde o `connect-src`.
+
+`.vercelignore` zajišťuje, že se `podklady/` (licencovaný font Acumin Pro, brand manuál)
+a interní `*.md` na produkci nedostanou — ověřeno, vrací 404.
 
 ## Privacy
 
@@ -183,9 +206,12 @@ sémantická struktura, jediné `<h1>` v hero, logická hierarchie `h2`/`h3`, al
 u obsahových obrázků, dekorativní obrázky `alt=""`, `theme-color`, SVG favicon,
 `preload` hero obrázku.
 
-Po přidělení ostré URL změnit: `canonical`, `og:url`, `og:image` (3× placeholder
-`PLACEHOLDER-DOMENA.cz` v `<head>`). Zvážit přidání `sitemap.xml` a `robots.txt`
-a JSON-LD (`LocalBusiness`/`Service`) — volitelné rozšíření.
+Produkční URL nastavena na `https://bvv.congustocatering.cz/` (`canonical`, `og:url`,
+`og:image`). Při změně domény upravit všechny tři + `robots.txt`.
+
+**Pozor:** stránka je zatím záměrně mimo vyhledávače — `noindex` je na třech místech
+(`vercel.json`, `index.html`, `robots.txt`) a před spuštěním se ruší všechna najednou.
+Volitelné rozšíření: `sitemap.xml` a JSON-LD (`LocalBusiness`/`Service`).
 
 ## Known assumptions
 
@@ -201,6 +227,8 @@ a JSON-LD (`LocalBusiness`/`Service`) — volitelné rozšíření.
 ## Future Claude instructions
 
 - **Zachovat vanilla HTML/CSS/JS** — žádné frameworky, žádný build, žádné npm závislosti.
+- **Žádné inline styly ani skripty** — produkční CSP je zablokuje. Nové styly vždy
+  jako třídu do `css/style.css` (pozor na pořadí pravidel a specificitu).
 - **Zachovat vizuální styl Con Gusto** (barvy, tonalita, prémiový klid, žádná AI klišé).
 - **Nevymýšlet fakta** — kontakty, reference, provozovny ani čísla bez ověřeného zdroje.
 - **Neporušit responzivitu** — testovat 320/375/390/768/1024/desktop, hlídat horizontální overflow.

@@ -7,8 +7,12 @@
   <title>Catering na BVV | Con Gusto Catering pro vystavovatele v Brně</title>
   <meta name="description" content="Catering pro vystavovatele na Brněnském výstavišti (BVV). Postaráme se o občerstvení na stánek, obchodní schůzky, VIP hosty i váš tým. Nezávazná poptávka za pár minut.">
 
-  <!-- TODO(IT): po přidělení ostré domény nastavte skutečnou URL -->
-  <link rel="canonical" href="https://www.PLACEHOLDER-DOMENA.cz/catering-bvv/">
+  <!-- ⚠ PŘED SPUŠTĚNÍM ODSTRANIT: stránka je zatím skrytá před vyhledávači.
+       Odstraňte tento řádek A zároveň X-Robots-Tag ve vercel.json a Disallow
+       v robots.txt. Návod: DEPLOY.md → „Spuštění naostro“. -->
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="canonical" href="https://bvv.congustocatering.cz/">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -16,8 +20,8 @@
   <meta property="og:site_name" content="Con Gusto Catering">
   <meta property="og:title" content="Catering na BVV | Con Gusto Catering pro vystavovatele">
   <meta property="og:description" content="Občerstvení na veletržní stánek, obchodní schůzky, VIP hosty i tým. Vy se soustředíte na obchod, my na gastronomii.">
-  <meta property="og:url" content="https://www.PLACEHOLDER-DOMENA.cz/catering-bvv/">
-  <meta property="og:image" content="https://www.PLACEHOLDER-DOMENA.cz/assets/img/hero.jpg">
+  <meta property="og:url" content="https://bvv.congustocatering.cz/">
+  <meta property="og:image" content="https://bvv.congustocatering.cz/assets/img/hero.jpg">
   <meta name="twitter:card" content="summary_large_image">
 
   <meta name="theme-color" content="#33002d">
@@ -167,12 +171,12 @@
             </div>
           </article>
 
-          <article class="card reveal" style="justify-content:center;background:var(--purpur);border-color:var(--purpur)">
-            <div class="card__body" style="text-align:center;align-items:center;gap:.75rem">
-              <p class="card__kicker" style="color:var(--gold)">nevíte, co přesně?</p>
-              <h3 style="color:#fff">Poradíme podle vašeho stánku</h3>
-              <p style="color:rgba(255,255,255,.82)">Řekněte nám veletrh, termín a počet lidí. Doporučíme vhodnou variantu.</p>
-              <a class="btn btn--primary" href="#poptavka" style="margin-top:.5rem">Poptat catering</a>
+          <article class="card card--cta reveal">
+            <div class="card__body">
+              <p class="card__kicker">nevíte, co přesně?</p>
+              <h3>Poradíme podle vašeho stánku</h3>
+              <p>Řekněte nám veletrh, termín a počet lidí. Doporučíme vhodnou variantu.</p>
+              <a class="btn btn--primary" href="#poptavka">Poptat catering</a>
             </div>
           </article>
         </div>
@@ -184,7 +188,7 @@
       <div class="wrap">
         <div class="how">
           <div>
-            <div class="section-head" style="margin-bottom:2rem">
+            <div class="section-head section-head--tight">
               <p class="eyebrow">jak to funguje</p>
               <h2 class="section-title" id="jak-title">Od poptávky k občerstvení na stánku</h2>
               <p class="lead">Jednoduchý postup bez zbytečné administrativy. Domluvíte se jednou, o zbytek se postaráme.</p>
@@ -271,7 +275,7 @@
     </section>
 
     <!-- ====================== POPTÁVKA / FORMULÁŘ ================== -->
-    <section class="section section--dark" id="poptavka" aria-labelledby="poptavka-title" style="background:var(--purpur)">
+    <section class="section section--dark section--purpur" id="poptavka" aria-labelledby="poptavka-title">
       <div class="wrap">
         <div class="contact">
           <div class="contact__aside" id="kontakt">
@@ -289,7 +293,7 @@
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>Catering pro veletrhy na <strong style="color:#fff;font-weight:600">Výstavišti Brno (BVV)</strong> a firemní akce v Brně a okolí</span>
+                <span>Catering pro veletrhy na <strong>Výstavišti Brno (BVV)</strong> a firemní akce v Brně a okolí</span>
               </li>
             </ul>
           </div>
@@ -368,7 +372,7 @@
               </div>
 
               <!-- honeypot proti spamu -->
-              <div class="field col-2" aria-hidden="true" style="position:absolute;left:-9999px;height:0;overflow:hidden">
+              <div class="field col-2 honeypot" aria-hidden="true">
                 <label for="f-web">Web (nevyplňujte)</label>
                 <input type="text" id="f-web" name="web" tabindex="-1" autocomplete="off">
               </div>
