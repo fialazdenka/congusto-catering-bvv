@@ -213,6 +213,35 @@ Produkční URL nastavena na `https://bvv.congustocatering.cz/` (`canonical`, `o
 (`vercel.json`, `index.html`, `robots.txt`) a před spuštěním se ruší všechna najednou.
 Volitelné rozšíření: `sitemap.xml` a JSON-LD (`LocalBusiness`/`Service`).
 
+## Kde jsme skončili (26. 8. 2026)
+
+Stránka je nasazená na Vercelu, git i produkce jsou srovnané. Živá zatím **není** —
+čeká se na tři věci. Detaily a příkazy v `DEPLOY.md`.
+
+**Blokuje IT:**
+1. **DNS záznam** u regzone.cz: `CNAME bvv → cname.vercel-dns.com.`
+   K 26. 8. 2026 stále chybí (ověřeno `vercel domains inspect`). Bez něj doména neexistuje.
+2. **Endpoint pro formulář.** Zásadní — formulář teď napíše „poptávku jsme přijali“
+   a data zahodí. Takhle se live pouštět nemá: znamenalo by to ztracené poptávky.
+   Buď počkat na endpoint, nebo formulář dočasně nahradit přímým kontaktem.
+   Požadavky na endpoint (HTTPS, POST v těle, server-side validace, rate limiting,
+   CSRF, klíče jen v Environment Variables) jsou v `DEPLOY.md`.
+
+**Blokuje klient:**
+3. **Odkaz na „Zpracování osobních údajů“** — 2× `href="#"` v `index.html`.
+   Formulář sbírá jméno, e-mail a telefon a má povinný checkbox se souhlasem,
+   který odkazuje nikam.
+
+**Čeká na pokyn:**
+4. Zrušit `noindex` (3 místa najednou — `vercel.json`, `index.html`, `robots.txt`).
+5. Rozhodnout, jestli má být `bvv.congustocatering.cz` do spuštění zamčená
+   (Deployment Protection → *All Deployments* nebo heslo). Doporučeno, dokud
+   nefunguje formulář — po naběhnutí DNS je doména jinak veřejně dostupná.
+
+**Neověřeno:** přepis inline `style=""` do CSS tříd (CTA karta „Poradíme podle vašeho
+stánku“ a purpurová sekce s poptávkou) proběhl bez vizuální kontroly — Chrome
+rozšíření nebylo připojené. Ověřeno jen textově a rozborem CSS pravidel.
+
 ## Known assumptions
 
 - „RED“ v názvech log = purpurová `#4b0041` (ověřeno z SVG i barevného PDF v podkladech).
