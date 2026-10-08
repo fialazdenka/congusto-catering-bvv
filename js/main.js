@@ -115,10 +115,17 @@
     });
   });
 
-  var showStatus = function (type, msg) {
+  var showStatus = function (type, msg, title) {
     if (!statusEl) return;
     statusEl.className = "form-status is-" + type;
-    statusEl.textContent = msg;
+    statusEl.textContent = "";
+    if (title) {
+      var strong = document.createElement("strong");
+      strong.className = "form-status__title";
+      strong.textContent = title;
+      statusEl.appendChild(strong);
+    }
+    statusEl.appendChild(document.createTextNode(msg));
   };
 
   form.addEventListener("submit", function (e) {
@@ -163,7 +170,11 @@
       });
 
     function onSuccess() {
-      showStatus("success", "Děkujeme, poptávku jsme přijali. Ozveme se vám co nejdříve.");
+      showStatus(
+        "success",
+        "Poptávku jsme v pořádku přijali. Ozveme se vám co nejdříve a probereme s vámi podrobnosti. Kdyby cokoli spěchalo, volejte +420 770 148 148.",
+        "Děkujeme za vaši poptávku"
+      );
       form.reset();
       form.querySelectorAll(".has-error").forEach(function (f) { f.classList.remove("has-error"); });
       statusEl.scrollIntoView({ behavior: "smooth", block: "center" });

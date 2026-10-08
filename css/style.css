@@ -440,6 +440,7 @@ fieldset legend { font-weight: 600; font-size: .92rem; padding: 0; margin-bottom
 .consent a { color: var(--purpur); }
 
 .form-status { margin-top: 1rem; font-size: .95rem; border-radius: var(--radius); padding: .9rem 1rem; display: none; }
+.form-status__title { display: block; font-size: 1.1rem; margin-bottom: .25rem; }
 .form-status.is-success { display: block; background: #eaf5ec; color: #1b5e20; border: 1px solid #b6ddbd; }
 .form-status.is-error   { display: block; background: #fdecea; color: #91221b; border: 1px solid #f5c6c2; }
 
