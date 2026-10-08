@@ -75,38 +75,81 @@ dig +short bvv.congustocatering.cz
 npx vercel domains inspect bvv.congustocatering.cz
 ```
 
-## Poptávkový formulář — čeká na endpoint od IT
+## Poptávkový formulář → e-mail přes Microsoft 365
 
-Formulář zatím **nikam neodesílá data** (odeslání se jen simuluje v prohlížeči).
-Napojení je připravené v `js/main.js` u komentáře `TODO(IT): Production form endpoint`.
+Formulář odesílá `js/main.js` (fetch, POST) na **`/api/poptavka`** — serverová
+funkce ve stejném Vercel projektu (`api/poptavka.mjs`, bez závislostí). Funkce
+poptávku ověří a pošle **e-mailem přes Microsoft Graph** ze schránky
+`noreply@congusto.cz` na `catering@congusto.cz`. Odpovědí na e-mail se píše
+rovnou zákazníkovi (jeho adresa je v Reply-To).
 
-Odesílají se pole: `jmeno, firma, email, telefon, veletrh, datum, stanek, osoby,
-zajem[], poznamka, souhlas` + skryté `web` = **honeypot** (je-li vyplněné, jde o bota
-a poptávka se zahazuje).
+**Data se nikde neukládají:** žádná databáze, kopie se neukládá ani do
+„Odeslaných“ schránky noreply (`saveToSentItems: false`), osobní údaje se
+nepíšou do logů Vercelu. Poptávka existuje jen v cílové schránce.
 
-**Bezpečnostní požadavky na endpoint** (poptávky obsahují osobní údaje —
-jméno, e-mail, telefon):
+Dokud nejsou nastavené proměnné níže, funkce vrací 503 a návštěvník vidí
+hlášku „Odeslání se nezdařilo… zavolejte / napište“ — nic se tiše neztratí.
 
-- **Jen HTTPS.** Endpoint na `https://bvv.congustocatering.cz/api/…` (stejná doména)
-  je nejbezpečnější — nevyžaduje CORS a data neopouštějí náš původ. Pokud bude
-  endpoint na cizí doméně, je nutné rozšířit `connect-src` v CSP ve `vercel.json`.
-- **Validace a sanitizace na serveru.** Frontendová validace je jen UX, ne ochrana.
-- **Anti-spam:** rate limiting na IP + kontrola honeypotu; případně CAPTCHA.
-- **CSRF ochrana**, pokud endpoint pracuje se session.
-- **Nikde neukládat víc, než je potřeba.** Ideálně poptávku rovnou odeslat e-mailem
-  na `catering@congusto.cz` a neskladovat ji v databázi. Když databáze být musí,
-  pak šifrované úložiště a omezený přístup.
-- **Žádné osobní údaje v URL** (query string) — vždy POST v těle požadavku.
-- **Žádné klíče a tokeny v `js/main.js`** — frontend je veřejný. Tajné hodnoty
-  patří do Environment Variables ve Vercelu (`npx vercel env add`).
-- **Retenční lhůta** a odkaz na *Zpracování osobních údajů* — viz níže.
+### Co musí udělat IT (Microsoft 365 / Entra)
+
+1. **Schránka odesílatele** `noreply@congusto.cz` — založit jako **sdílenou
+   schránku** (shared mailbox, nepotřebuje licenci). Pokud už existuje, použít ji.
+2. **Registrace aplikace** v Microsoft Entra ID (App registrations → New),
+   např. „Web BVV – poptávkový formulář“, single tenant.
+3. **Oprávnění:** Microsoft Graph → *Application permission* **`Mail.Send`**
+   → *Grant admin consent*.
+4. **Omezit aplikaci jen na schránku noreply** (jinak by mohla posílat
+   jménem kohokoli v tenantu) — v Exchange Online přes *RBAC for Applications*
+   (management scope na `noreply@congusto.cz`), případně starší
+   *Application Access Policy*.
+5. **Client secret** vytvořit (Certificates & secrets) a zapsat si **datum
+   expirace** — po vypršení formulář přestane odesílat (vrací chybu). Založit
+   si připomínku na obnovu.
+6. Předat hodnoty: **Tenant ID, Client ID, Client secret** (bezpečnou cestou,
+   ne e-mailem v čitelné podobě).
+
+### Proměnné prostředí ve Vercelu
+
+Settings → Environment Variables (nebo `npx vercel env add <NÁZEV> production`),
+prostředí **Production** (případně i Preview pro testování). Po přidání redeploy.
+
+| Název | Hodnota |
+|---|---|
+| `M365_TENANT_ID` | Directory (tenant) ID |
+| `M365_CLIENT_ID` | Application (client) ID |
+| `M365_CLIENT_SECRET` | client secret (označit jako *Sensitive*) |
+| `MAIL_FROM` | `noreply@congusto.cz` |
+| `MAIL_TO` | `catering@congusto.cz` (víc adres oddělit čárkou) |
+
+### Ochrana proti spamu (bez CAPTCHA, bez cookies)
+
+- **Honeypot** — skryté pole `web`; vyplněné = bot → tváříme se úspěšně, nic se neodešle.
+- **Časová past** — formulář odeslaný do 3 s od načtení stránky se zahodí (pole `_t`).
+- **Kontrola původu** — `Origin` musí odpovídat doméně, na které funkce běží.
+- **Serverová validace** — povinná pole, formát e-mailu/telefonu, délky,
+  souhlas, povolené hodnoty checkboxů; HTML v e-mailu je escapované.
+- **Limit velikosti** požadavku (20 kB) a jednoduchý limit 5 poptávek / 10 min
+  na IP v rámci jedné instance funkce.
+- **Doporučeno doplnit ve Vercelu:** Firewall → Rules → *Rate Limit* na cestu
+  `/api/poptavka` (např. 5 požadavků / 10 min na IP, akce *Deny*). To je
+  spolehlivý limit napříč všemi instancemi.
+- Pokud by spam přesto procházel: doplnit Cloudflare Turnstile (vyžaduje úpravu CSP).
+
+CSRF: funkce nepracuje se session ani cookies, takže klasické CSRF nehrozí;
+kontrola `Origin` navíc brání odesílání z cizích webů.
+
+### Test po nastavení
+
+Vyplnit formulář na preview/produkci → e-mail musí dorazit do `catering@congusto.cz`.
+Chyby odeslání jsou v Vercel → Logs (`poptavka: …`), bez osobních údajů.
 
 ## Spuštění naostro — checklist
 
 1. **DNS** — IT přidá záznam podle tabulky výše, ověřit `vercel domains inspect`.
-2. **Formulář** — napojit reálný endpoint (viz výše) a otestovat odeslání.
-3. **Zpracování osobních údajů** — doplnit reálný odkaz místo `href="#"`
-   (2× v `index.html`: souhlas u formuláře a patička).
+2. **Formulář** — IT připraví M365 aplikaci, doplnit proměnné prostředí
+   (viz výše), nastavit Firewall rate limit a otestovat odeslání.
+3. ~~Zpracování osobních údajů~~ — hotovo, odkazuje na
+   `https://www.congusto.cz/gdpr/`.
 4. **Povolit indexaci** — všechny tři pojistky najednou:
    - `vercel.json` → smazat blok `X-Robots-Tag`
    - `index.html` → smazat `<meta name="robots" …>` včetně komentáře nad ním

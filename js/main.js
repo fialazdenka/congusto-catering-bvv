@@ -89,6 +89,7 @@
   var form = document.getElementById("poptavka-form");
   if (!form) return;
 
+  var loadedAt = Date.now();
   var statusEl = document.getElementById("form-status");
   var submitBtn = document.getElementById("submit-btn");
 
@@ -144,38 +145,31 @@
       return;
     }
 
-    /* -----------------------------------------------------------------
-       TODO(IT): Production form endpoint.
-       Nyní se odeslání pouze simuluje na straně prohlížeče — data se
-       NIKAM neodesílají. Pro ostrý provoz nahraďte blok níže reálným
-       voláním, např.:
+    // Odeslání na /api/poptavka → e-mail přes Microsoft 365 (viz api/poptavka.mjs).
+    // Nic se neukládá; _t = doba vyplňování (časová past proti botům).
+    var data = new FormData(form);
+    data.append("_t", String(Date.now() - loadedAt));
 
-         var data = new FormData(form);
-         fetch("/api/poptavka", { method: "POST", body: data })
-           .then(function (r) { if (!r.ok) throw new Error(); return r; })
-           .then(function () { onSuccess(); })
-           .catch(function () { onError(); });
-
-       Server MUSÍ provést vlastní validaci a sanitizaci vstupu,
-       ochranu proti spamu (rate limiting / CAPTCHA) a CSRF ochranu.
-       Podrobnosti viz README.md a CLAUDE.md.
-    ------------------------------------------------------------------ */
     submitBtn.disabled = true;
     var originalText = submitBtn.textContent;
     submitBtn.textContent = "Odesílám…";
 
-    window.setTimeout(function () {
-      onSuccess();
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText;
-    }, 700);
+    fetch(form.action, { method: "POST", body: data, credentials: "same-origin" })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); })
+      .then(onSuccess, onError)
+      .then(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      });
 
     function onSuccess() {
-      showStatus("success", "Děkujeme, poptávku jsme přijali. Ozveme se vám co nejdříve. (Ukázkový režim — napojení odesílání zajistí IT.)");
+      showStatus("success", "Děkujeme, poptávku jsme přijali. Ozveme se vám co nejdříve.");
       form.reset();
       form.querySelectorAll(".has-error").forEach(function (f) { f.classList.remove("has-error"); });
       statusEl.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    // function onError() { showStatus("error", "Odeslání se nezdařilo. Zkuste to prosím znovu, nebo nám napište na catering@congusto.cz."); submitBtn.disabled = false; submitBtn.textContent = originalText; }
+    function onError() {
+      showStatus("error", "Odeslání se nezdařilo. Zkuste to prosím znovu, nebo nám zavolejte na +420 770 148 148 či napište na catering@congusto.cz.");
+    }
   });
 })();

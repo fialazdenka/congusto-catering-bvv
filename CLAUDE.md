@@ -48,7 +48,8 @@ Vychází z brand manuálu ve složce `podklady/` a z živého webu
 ├─ robots.txt                 # zatím Disallow (stránka před spuštěním)
 ├─ .vercelignore              # co se NEnahrává na produkci
 ├─ css/style.css              # veškeré styly, CSS custom properties, breakpointy
-├─ js/main.js                 # vanilla JS: nav, sticky header, reveal, validace formuláře
+├─ js/main.js                 # vanilla JS: nav, sticky header, reveal, validace + odeslání formuláře
+├─ api/poptavka.mjs           # Vercel funkce: formulář → e-mail přes Microsoft Graph (bez závislostí)
 ├─ assets/
 │  ├─ img/                    # fotografie (hero + sekce)
 │  ├─ logo/                   # SVG loga + favicon
@@ -67,7 +68,7 @@ Bez build procesu, bez frameworků, bez závislostí. Čisté HTML5 + CSS3 + van
 propojený s GitHub repem `fialazdenka/congusto-catering-bvv` — push do `main` je
 automatický produkční deploy, z terminálu `npx vercel --prod`.
 
-Cílová doména: **`bvv.congustocatering.cz`** (přiřazená k projektu, čeká na DNS
+Cílová doména: **`bvv.congustocatering.cz`** (přiřazená k projektu, DNS i certifikát hotové 8. 10. 2026; dříve: čeká na DNS
 záznam u regzone.cz). Dočasná adresa: `congusto-catering-bvv.vercel.app`.
 
 Stránka je před spuštěním **soukromá** (Vercel Authentication na `*.vercel.app`)
@@ -123,8 +124,8 @@ python3 -m http.server 8000
 
 **Musí doplnit / potvrdit klient nebo IT:**
 - Fyzická adresa provozovny / fakturační údaje (na stránce záměrně neuvedeny).
-- Reálný odkaz na dokument **Zpracování osobních údajů** (nyní placeholder `href="#"`
-  na 2 místech: consent u formuláře a patička).
+- ~~Odkaz na Zpracování osobních údajů~~ — hotovo (30. 9. 2026):
+  `https://www.congusto.cz/gdpr/` (consent + patička).
 - Potvrdit formulaci „odpověď obvykle do 24 hodin“ (je to interní příslib, ne garance).
 - Případně nahradit `team-care.jpg` kvalitnější fotografií.
 
@@ -133,35 +134,34 @@ klienty. Loga třetích stran nebyla lokálně k dispozici a nejsou hotlinkován
 
 ## Form integration
 
-Formulář `#poptavka-form` **neodesílá data na žádný server** — odeslání je zatím
-pouze simulováno na frontendu (viz `js/main.js`). Vše je připraveno k napojení:
+Formulář `#poptavka-form` odesílá `js/main.js` (fetch, POST, `FormData`) na
+**`/api/poptavka`** = `api/poptavka.mjs` (Vercel Node funkce, Web `Request`/`Response`,
+bez npm závislostí). Funkce poptávku ověří a pošle e-mailem přes **Microsoft Graph
+`sendMail`** ze sdílené schránky `noreply@congusto.cz` na `catering@congusto.cz`
+(Reply-To = e-mail zákazníka). **Nic se neukládá** — žádná DB, `saveToSentItems: false`,
+osobní údaje se nelogují. Rozhodnutí klientky: M365 místo Brevo (k Brevu nemá přístup),
+data nesmí být nikde online uložená.
 
-1. **Kde napojit** (`js/main.js`, blok označený `TODO(IT): Production form endpoint`
-   uvnitř `form.addEventListener('submit', …)`): nahradit `setTimeout`/`onSuccess`
-   reálným `fetch()` na produkční endpoint, např.:
-   ```js
-   var data = new FormData(form);
-   fetch("/api/poptavka", { method: "POST", body: data })
-     .then(function (r) { if (!r.ok) throw new Error(); return r; })
-     .then(onSuccess)
-     .catch(onError);   // onError skeleton je připraven (zakomentovaný) hned pod blokem
-   ```
-   Alternativně lze místo JS použít klasický submit — doplnit `action="…"`
-   a `method="post"` na `<form id="poptavka-form">` (nyní `action="#"`).
-2. **Pole** (name atributy): `jmeno, firma, email, telefon, veletrh, datum, stanek,
-   osoby, zajem[] (checkboxy), poznamka, souhlas`. Skryté `web` = **honeypot**
-   (anti-spam) — pokud přijde vyplněné, poptávku zahoďte.
-3. **Server MUSÍ** provést vlastní validaci a sanitizaci, ochranu proti spamu
-   (rate limiting / CAPTCHA), CSRF ochranu a bezpečné uložení/odeslání (např. e-mail
-   na `catering@congusto.cz`). Frontendová validace je jen UX, ne bezpečnostní prvek.
+- Konfigurace jen přes env proměnné `M365_TENANT_ID`, `M365_CLIENT_ID`,
+  `M365_CLIENT_SECRET`, `MAIL_FROM`, `MAIL_TO`. Bez nich funkce vrací 503 a
+  frontend ukáže chybovou hlášku s telefonem/e-mailem (žádný falešný úspěch).
+- Pole: `jmeno, firma, email, telefon, veletrh, datum, stanek, osoby, zajem`
+  (checkboxy, stejné name), `poznamka, souhlas`; skryté `web` = honeypot;
+  `_t` (doplňuje JS) = doba vyplňování, < 3 s = bot. Botům funkce vrací 200 a nic neposílá.
+- Anti-spam: honeypot, časová past, kontrola `Origin` = host, serverová validace,
+  limit 20 kB, in-memory limit 5/10 min na IP a instanci. Spolehlivý rate limit
+  = Vercel Firewall pravidlo na `/api/poptavka` (nastavuje se v dashboardu).
+- Přidání pole do formuláře = upravit i `FIELDS` v `api/poptavka.mjs`.
+- Návod pro IT (Entra app, `Mail.Send`, omezení na schránku, expirace secretu)
+  je v `DEPLOY.md`.
 
 ## Production checklist
 
 Podrobně a s příkazy v `DEPLOY.md` → „Spuštění naostro“. Ve zkratce:
 
 1. DNS: IT přidá `CNAME bvv → cname.vercel-dns.com.` u regzone.cz.
-2. Napojit formulář na reálný endpoint + server-side validace/sanitizace/anti-spam/CSRF (viz výše).
-3. Doplnit reálný odkaz na „Zpracování osobních údajů“ (2× `href="#"`).
+2. IT: M365 aplikace + env proměnné pro formulář, Firewall rate limit, test odeslání.
+3. ~~Odkaz na „Zpracování osobních údajů“~~ — hotovo.
 4. Povolit indexaci — `noindex` je na **třech** místech (`vercel.json`, `index.html`, `robots.txt`).
 5. Vyřešit analytiku a consent (viz Privacy) — teprv poté vkládat tracking.
 
@@ -213,34 +213,37 @@ Produkční URL nastavena na `https://bvv.congustocatering.cz/` (`canonical`, `o
 (`vercel.json`, `index.html`, `robots.txt`) a před spuštěním se ruší všechna najednou.
 Volitelné rozšíření: `sitemap.xml` a JSON-LD (`LocalBusiness`/`Service`).
 
-## Kde jsme skončili (26. 8. 2026)
+## Kde jsme skončili (8. 10. 2026)
 
-Stránka je nasazená na Vercelu, git i produkce jsou srovnané. Živá zatím **není** —
-čeká se na tři věci. Detaily a příkazy v `DEPLOY.md`.
+Stránka běží na **`https://bvv.congustocatering.cz`** (DNS u regzone.cz hotové,
+TLS certifikát vystaven 8. 10. 2026 ručně přes `npx vercel certs issue` — Vercel
+ho po přidání DNS sám nevydal). Formulář (`/api/poptavka`, M365 Graph) a odkaz na
+GDPR (`https://www.congusto.cz/gdpr/`) jsou commitnuté a pushnuté do `main`.
 
-**Blokuje IT:**
-1. **DNS záznam** u regzone.cz: `CNAME bvv → cname.vercel-dns.com.`
-   K 26. 8. 2026 stále chybí (ověřeno `vercel domains inspect`). Bez něj doména neexistuje.
-2. **Endpoint pro formulář.** Zásadní — formulář teď napíše „poptávku jsme přijali“
-   a data zahodí. Takhle se live pouštět nemá: znamenalo by to ztracené poptávky.
-   Buď počkat na endpoint, nebo formulář dočasně nahradit přímým kontaktem.
-   Požadavky na endpoint (HTTPS, POST v těle, server-side validace, rate limiting,
-   CSRF, klíče jen v Environment Variables) jsou v `DEPLOY.md`.
+**Hotovo 1. 10. 2026:**
+- IT dodalo Entra aplikaci (app „noreply Congusto“). Env proměnné `M365_TENANT_ID`,
+  `M365_CLIENT_ID`, `M365_CLIENT_SECRET` (*Sensitive*), `MAIL_FROM=noreply@congusto.cz`,
+  `MAIL_TO=catering@congusto.cz` jsou ve Vercelu pro **Production i Preview**.
+- Token z Entra funguje. Testovací poptávka („TEST – ověření formuláře“) z preview
+  deploye `congusto-catering-cf28ybu37-…vercel.app` → funkce vrátila 200, Graph
+  `sendMail` přijal.
 
-**Blokuje klient:**
-3. **Odkaz na „Zpracování osobních údajů“** — 2× `href="#"` v `index.html`.
-   Formulář sbírá jméno, e-mail a telefon a má povinný checkbox se souhlasem,
-   který odkazuje nikam.
+**Otevřené body:**
+1. **Ověřit doručení** — klientka má zkontrolovat, zda test dorazil do
+   `catering@congusto.cz` (i spam).
+2. **Rotovat client secret** — byl vložen v plain textu do chatu. IT vygeneruje nový,
+   vloží ho přímo do Vercelu (`M365_CLIENT_SECRET`, Production + Preview, pak redeploy)
+   a starý v Entra smaže. Nový secret do chatu neposílat.
+3. **Ověřit u IT omezení aplikace na schránku noreply** — token neobsahuje roli
+   `Mail.Send` (odeslání přesto prošlo → pravděpodobně Exchange RBAC for Applications).
+4. ~~Commit + push~~ — hotovo 8. 10. 2026.
+5. ~~DNS + certifikát~~ — hotovo 8. 10. 2026.
+6. Vercel Firewall rate limit na `/api/poptavka` (doporučeno).
+7. Zrušit `noindex` (3 místa najednou — `vercel.json`, `index.html`, `robots.txt`).
+8. Zamknout `bvv.congustocatering.cz` do spuštění (Deployment Protection → *All Deployments*)?
 
-**Čeká na pokyn:**
-4. Zrušit `noindex` (3 místa najednou — `vercel.json`, `index.html`, `robots.txt`).
-5. Rozhodnout, jestli má být `bvv.congustocatering.cz` do spuštění zamčená
-   (Deployment Protection → *All Deployments* nebo heslo). Doporučeno, dokud
-   nefunguje formulář — po naběhnutí DNS je doména jinak veřejně dostupná.
-
-**Neověřeno:** přepis inline `style=""` do CSS tříd (CTA karta „Poradíme podle vašeho
-stánku“ a purpurová sekce s poptávkou) proběhl bez vizuální kontroly — Chrome
-rozšíření nebylo připojené. Ověřeno jen textově a rozborem CSS pravidel.
+**Neověřeno vizuálně:** přepis inline `style=""` do CSS tříd (CTA karta a purpurová
+sekce s poptávkou) — Chrome rozšíření nebylo připojené.
 
 ## Known assumptions
 

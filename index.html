@@ -298,13 +298,10 @@
             </ul>
           </div>
 
-          <!-- FORMULÁŘ:
-               TODO(IT): Production form endpoint.
-               Frontend nyní odesílání pouze simuluje (viz js/main.js).
-               Napojení: doplňte atribut action + method na <form> nebo
-               nahraďte fetch() v js/main.js. Detaily viz README.md / CLAUDE.md. -->
+          <!-- FORMULÁŘ: odesílá js/main.js (fetch) na /api/poptavka → e-mail přes M365.
+               Viz api/poptavka.mjs a DEPLOY.md. -->
           <form class="form-card" id="poptavka-form" novalidate
-                action="#" method="post" aria-labelledby="poptavka-title">
+                action="/api/poptavka" method="post" aria-labelledby="poptavka-title">
             <div class="form-grid">
               <div class="field col-2">
                 <label for="f-jmeno">Jméno a příjmení <span class="req" aria-hidden="true">*</span></label>
@@ -365,7 +362,7 @@
                 <label class="consent">
                   <input type="checkbox" id="f-souhlas" name="souhlas" required>
                   <span>Souhlasím se zpracováním osobních údajů za účelem vyřízení poptávky.
-                    <a href="#" target="_blank" rel="noopener noreferrer">Zásady zpracování osobních údajů</a>.
+                    <a href="https://www.congusto.cz/gdpr/" target="_blank" rel="noopener noreferrer">Zásady zpracování osobních údajů</a>.
                     <span class="req" aria-hidden="true">*</span></span>
                 </label>
                 <span class="error-msg" data-error>Bez souhlasu nemůžeme poptávku zpracovat.</span>
@@ -416,7 +413,7 @@
       </div>
       <div class="footer-bottom">
         <span>© <span id="year">2026</span> Con Gusto Catering. Všechna práva vyhrazena.</span>
-        <span><a href="#" target="_blank" rel="noopener noreferrer">Zpracování osobních údajů</a></span>
+        <span><a href="https://www.congusto.cz/gdpr/" target="_blank" rel="noopener noreferrer">Zpracování osobních údajů</a></span>
       </div>
     </div>
   </footer>
